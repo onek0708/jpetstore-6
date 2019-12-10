@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:16.04
  
 LABEL maintainer="Steven Cheon <onek0708@gmail.com>"
  
@@ -8,50 +8,59 @@ RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update -y \
   && apt-get install -y nginx \
                         openssh-server \
-                        supervisor \
                         git \
 			curl \
+			language-pack-ko \
                         openjdk-11-jdk
 
-RUN rm -rf /var/lib/apt/lists/*
-RUN git clone https://github.com/onek0708/jpetstore-6.git
-RUN cd jpetstore-6 && ./mvnw clean package 
-
-ARG ssh_prv_key
-ARG ssh_pub_key
-
-# Authorize SSH Host
-RUN mkdir -p /root/.ssh && \
-    chmod 0700 /root/.ssh && \
-    ssh-keyscan github.com > /root/.ssh/known_hosts
-
-# Add the keys and set permissions
-RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
-    echo "$ssh_pub_key" > /root/.ssh/id_rsa.pub && \
-    chmod 600 /root/.ssh/id_rsa && \
-    chmod 600 /root/.ssh/id_rsa.pub
-
-RUN chown -R www-data:www-data /var/www/html
-ADD supervisord.conf /etc/supervisor/supervisord.conf
-
-EXPOSE 22 80 8080 443
-
-# Volume configuration
-VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
-
-#CMD ["/usr/bin/supervisord"]
+# set locale ko_KR
+RUN locale-gen ko_KR.UTF-8
  
+ENV LANG ko_KR.UTF-8
+ENV LANGUAGE ko_KR.UTF-8
+ENV LC_ALL ko_KR.UTF-8
+
+RUN rm -rf /var/lib/apt/lists/*
+
+# SSH
+RUN mkdir /var/run/sshd
+RUN echo 'root:root' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+
+# Nginx.
+RUN echo "\ndaemon off;" >> /etc/nginx/nginx.conf
+RUN chown -R www-data:www-data /var/lib/nginx
+VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
+WORKDIR /etc/nginx
+#CMD ["nginx"]
+
+EXPOSE 80
+EXPOSE 443
 
 # Tomcat
 RUN  groupadd tomcat
 RUN  useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
 RUN cd /tmp \
-     && curl -O http://mirror.cc.columbia.edu/pub/software/apache/tomcat/tomcat-9/v9.0.10/bin/apache-tomcat-9.0.10.tar.gz \
-     &&  mkdir /opt/tomcat &&  tar xzvf apache-tomcat-9*tar.gz -C /opt/tomcat --strip-components=1 \
+     && curl -O http://mirror.navercorp.com/apache/tomcat/tomcat-9/v9.0.29/bin/apache-tomcat-9.0.29.tar.gz \
+     && mkdir /opt/tomcat &&  tar xzvf apache-tomcat-9*tar.gz -C /opt/tomcat --strip-components=1 \
      && cd /opt/tomcat \
-     &&  chgrp -R tomcat /opt/tomcat \
- &&  chmod -R g+r conf \
- &&  chmod g+x conf \
- &&  chown -R tomcat webapps/ work/ temp/ logs/    \ 
- &&  update-java-alternatives -l \
- &&  ufw allow 8080
+     && chgrp -R tomcat /opt/tomcat \
+     && chmod -R g+r conf \
+     && chmod g+x conf \
+     && chown -R tomcat webapps/ work/ temp/ logs/    
+#RUN update-java-alternatives -l 
+RUN cd /etc/systemd/system/ && wget https://raw.githubusercontent.com/onek0708/jpetstore-6/master/tomcat.service
+#CMD ["/etc/systemd/system/systemctl start tomcat"]
+#CMD ["/etc/systemd/system/systemctl enable tomcat"]
+#RUN ufw allow 8080
+EXPOSE 8080
+

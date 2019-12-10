@@ -1,1 +1,2 @@
-docker build -t example --build-arg ssh_prv_key="$(cat ~/.ssh/id_rsa)" --build-arg ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)" .
+docker build -t jpetstore .
+docker run -d -p 22222:22 -p 8080:8080 -p 80:80 --name jpetstore jpetstore
