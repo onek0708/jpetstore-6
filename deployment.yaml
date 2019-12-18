@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
       - name: tomcat
-        image: onek0708/jpetstore:v2
+        image: onek0708/jpetstore:v3
         ports:
         - containerPort: 8080
         env:

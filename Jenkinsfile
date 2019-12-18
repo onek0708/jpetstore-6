@@ -1,5 +1,5 @@
 node {
-    // Jenkins 파일에서 취급하는 파라미터들을 미리 정의한다.
+    // Jenkins 파일에서 취급하는 파라미터들을 미리 정의한다
     // 아래와 같이 미리 정의하면 Jenkins Job 이 Parametrized Job 이 되며 기본 변수들이 들어가게 된다
     properties(
             [
