@@ -67,9 +67,11 @@ public class CatalogService {
    *          the keywords
    * @return the list
    */
-  public List<Product> searchProductList(String keywords) {
+  public List<Product> searchProductList(String keywords) throws InterruptedException {
     if ("error".equals(keywords)) {
       throw new RuntimeException("Error: This is a search error!!!");
+    } else if ("sleep".equals(keywords)) {
+      Thread.sleep(4000L);
     }
     List<Product> products = new ArrayList<>();
     for (String keyword : keywords.split("\\s+")) {
