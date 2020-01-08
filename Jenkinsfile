@@ -35,7 +35,7 @@ podTemplate(label: 'jenkins-slave-pod',
         //def registry = "192.168.194.129:5000"
         //def registryCredential = "nexus3-docker-registry"
 
-        def registry = "onek0708"
+        def registry = "docker.io"
 
         // https://jenkins.io/doc/pipeline/steps/git/
         stage('Clone repository') {
@@ -60,25 +60,25 @@ podTemplate(label: 'jenkins-slave-pod',
         
         stage('build the source code via maven') {
             container('maven') {
-                sh 'mvn package'
+                sh 'mvn clean package'
                 //sh 'bash build.sh'
             }
         }
 
         stage('Build docker image') {
             container('docker') {
-                //withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
-                withDockerRegistry() {
-                    sh "docker build -t $registry/JPetstore:latest -f ./Dockerfile ."
+                withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
+                    sh "docker build -t onek0708/JPetstore:latest -f ./Dockerfile ."
                 }
             }
         }
 
         stage('Push docker image') {
             container('docker') {
-                //withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
+                withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
                 withDockerRegistry() {
-                    docker.image("$registry/JPetstore:latest").push()
+                    //docker.image("$registry/JPetstore:latest").push()
+                    docker.image("onek0708/JPetstore:latest").push()
                 }
             }
         }
