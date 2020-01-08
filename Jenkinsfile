@@ -1,12 +1,86 @@
-podTemplate(label: 'mypod', containers: [
-    containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat')
-]) {
-    node ('mypod') {
-        stage 'Get a Maven project'
-        git 'https://github.com/onek0708/jpetstore-6.git'
-        container('maven') {
-            stage 'Build a Maven project'
-            sh 'mvn clean install -Dmaven.test.skip=true'
+podTemplate(label: 'jenkins-slave-pod', 
+  containers: [
+    containerTemplate(
+      name: 'git',
+      image: 'alpine/git',
+      command: 'cat',
+      ttyEnabled: true
+    ),
+    containerTemplate(
+      name: 'maven',
+      image: 'maven:3.6.2-jdk-8',
+      command: 'cat',
+      ttyEnabled: true
+    ),
+    containerTemplate(
+      name: 'node',
+      image: 'node:8.16.2-alpine3.10',
+      command: 'cat',
+      ttyEnabled: true
+    ),
+    containerTemplate(
+      name: 'docker',
+      image: 'docker',
+      command: 'cat',
+      ttyEnabled: true
+    ),
+  ],
+  volumes: [ 
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'), 
+  ]
+)
+
+{
+    node('jenkins-slave-pod') { 
+        //def registry = "192.168.194.129:5000"
+        //def registryCredential = "nexus3-docker-registry"
+
+        def registry = "onek0708"
+
+        // https://jenkins.io/doc/pipeline/steps/git/
+        stage('Clone repository') {
+            container('git') {
+                // https://gitlab.com/gitlab-org/gitlab-foss/issues/38910
+                checkout([$class: 'GitSCM',
+                    //branches: [[name: '*/dockerizing']],
+                    branches: [[name: '*/master']],
+                    userRemoteConfigs: [
+                        //[url: 'http://192.168.194.132/root/playce-iot.git', credentialsId: 'jacobbaek-privategitlab']
+                        [url: 'https://github.com/onek0708/jpetstore-6.git']
+                    ],
+                ])
+            }
         }
-    }
+        
+        //stage('build the source code via npm') {
+        //    container('node') {
+        //        sh 'cd frontend && npm install && npm run build:production'
+        //    }
+        //}
+        
+        stage('build the source code via maven') {
+            container('maven') {
+                sh 'mvn package'
+                //sh 'bash build.sh'
+            }
+        }
+
+        stage('Build docker image') {
+            container('docker') {
+                //withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
+                withDockerRegistry() {
+                    sh "docker build -t $registry/JPetstore:latest -f ./Dockerfile ."
+                }
+            }
+        }
+
+        stage('Push docker image') {
+            container('docker') {
+                //withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
+                withDockerRegistry() {
+                    docker.image("$registry/JPetstore:latest").push()
+                }
+            }
+        }
+    }   
 }
