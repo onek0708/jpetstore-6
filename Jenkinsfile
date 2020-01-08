@@ -36,6 +36,7 @@ podTemplate(label: 'jenkins-slave-pod',
         //def registryCredential = "nexus3-docker-registry"
 
         def registry = "docker.io"
+        def registryCredential = "registryCredential"
 
         // https://jenkins.io/doc/pipeline/steps/git/
         stage('Clone repository') {
