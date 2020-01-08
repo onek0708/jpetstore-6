@@ -76,7 +76,6 @@ podTemplate(label: 'jenkins-slave-pod',
         stage('Push docker image') {
             container('docker') {
                 withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
-                withDockerRegistry() {
                     //docker.image("$registry/JPetstore:latest").push()
                     docker.image("onek0708/JPetstore:latest").push()
                 }
