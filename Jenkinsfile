@@ -69,7 +69,7 @@ podTemplate(label: 'jenkins-slave-pod',
         stage('Build docker image') {
             container('docker') {
                 withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
-                    sh "docker build -t onek0708/jpetstore:1.0 -f ./Dockerfile ."
+                    sh "docker build -t onek0708/jpetstore:v4 -f ./Dockerfile ."
                 }
             }
         }
@@ -78,7 +78,7 @@ podTemplate(label: 'jenkins-slave-pod',
             container('docker') {
                 withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
                     //docker.image("$registry/jpetstore:1.0").push()
-                    docker.image("onek0708/jpetstore:1.0").push()
+                    docker.image("onek0708/jpetstore:v4").push()
                 }
             }
         }
