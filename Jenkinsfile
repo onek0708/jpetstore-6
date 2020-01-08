@@ -78,7 +78,7 @@ podTemplate(label: 'jenkins-slave-pod',
             container('docker') {
                 withDockerRegistry([ credentialsId: "$registryCredential", url: "http://$registry" ]) {
                     //docker.image("$registry/jpetstore:1.0").push()
-                    docker.image("onek0708/JPetstore:latest").push()
+                    docker.image("onek0708/jpetstore:1.0").push()
                 }
             }
         }
